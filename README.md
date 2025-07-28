@@ -25,7 +25,7 @@ Estimate gaze on computer screen
 
     To install OpenVINO Development Tools into the existing environment with the deep learning framework of your choice, run the following command:
 
-        pip install openvino-dev
+        pip install openvino-dev==2023.3.0
         pip install -r requirements.txt or conda install --file requirements.txt
 
     Additionally to OpenVino we added the demo programm from pl_gaze_estimation (https://github.com/hysts/pytorch_mpiigaze_demo), training code for the pl_gaze_estimation using MPIIGaze, MPIIFaceGaze, and ETH-XGaze are available under: https://github.com/hysts/pl_gaze_estimation/tree/main
@@ -34,11 +34,17 @@ Estimate gaze on computer screen
 
         pip install -r requirements_pl_gaze.txt
 
-- [ ] Copy the file openh264-1.8.0-win64.dll into the environment path (e.g. C:\Anaconda3\envs\name_of_env)
+- [ ] Copy the file openh264-1.8.0-win64.dll into the environment path (e.g. C:\Anaconda3\envs\name_of_env). Link: https://github.com/cisco/openh264/releases/tag/v1.8.0
 
 - [ ] run main.py to test the application with the OpenVino model
+    ```bash
+    python src/main.py
+    ```
 
 - [ ] run main_pl.py to test the application with the pl_gaze_estimation model (https://github.com/hysts/pytorch_mpiigaze_demo)
+    ```python
+    python src/main_pl.py
+    ```
 
 - [ ] in order to run main_compareWithTobii.py you need to generate a exe file that runs Tobii Eye Tracker 5, for this you need the sdk dll for Tobii Eye Tracker 5
 

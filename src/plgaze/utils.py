@@ -9,9 +9,9 @@ import torch.hub
 import yaml
 from omegaconf import DictConfig
 
-from ptgaze.common.face_model import FaceModel
-from ptgaze.common.face_model_68 import FaceModel68
-from ptgaze.common.face_model_mediapipe import FaceModelMediaPipe
+from plgaze.common.face_model import FaceModel
+from plgaze.common.face_model_68 import FaceModel68
+from plgaze.common.face_model_mediapipe import FaceModelMediaPipe
 
 logger = logging.getLogger(__name__)
 

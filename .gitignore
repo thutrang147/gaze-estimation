@@ -1,0 +1,6 @@
+# Ignore caches
+__pycache__/
+*.pyc
+
+# Ignore program outputs
+results/* 
