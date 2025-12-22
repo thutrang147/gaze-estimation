@@ -79,7 +79,26 @@ python src/main_compareWithTobii.py
 ```
 *Requires Tobii Eye Tracker 5 SDK and a custom executable file.*
 
-## Credits
-If you use the code in the academic context, please cite:
+## Modifications
 
-Lucas Falch and Katrin Solveig Lohan, "Webcam-based gaze estimation for computer screen interaction", Frontiers in Robotics and AI, Volume 11 - 2024 | https://doi.org/10.3389/frobt.2024.1369566
+This repository is based on the original work by Lucas Falch and Katrin Solveig Lohan. Key modifications include:
+
+- **macOS ARM (Apple Silicon) compatibility**: Fixed OpenVINO integration to work with M1/M2/M3/M4 chips
+- **Screen size estimation**: Added fallback for physical screen dimensions on macOS where screeninfo returns None
+- **OpenVINO 2025 support**: Updated code to support both OpenVINO 2024 and 2025 API versions
+- **Removed deprecated imports**: Fixed turtle module import issue
+- **Updated installation guide**: Added specific instructions for macOS ARM setup
+
+## Credits & Original Work
+
+This project is based on:
+- **Original Repository**: [WebCamGazeEstimation](https://github.com/FalchLucas/WebCamGazeEstimation) by Lucas Falch
+- **Research Paper**: Lucas Falch and Katrin Solveig Lohan, "Webcam-based gaze estimation for computer screen interaction", Frontiers in Robotics and AI, Volume 11 - 2024 | https://doi.org/10.3389/frobt.2024.1369566
+
+If you use this code in an academic context, please cite the original paper above.
+
+### Additional Credits
+
+The PyTorch pl_gaze model is based on:
+- [pytorch_mpiigaze_demo](https://github.com/hysts/pytorch_mpiigaze_demo)
+- [pl_gaze_estimation](https://github.com/hysts/pl_gaze_estimation/tree/main)
