@@ -327,13 +327,40 @@ def getWebcamSize(cap):
 
 def getScreenSize():
     screen = screeninfo.get_monitors()
+    width = height = width_mm = height_mm = None
+    
     for s in screen:
         if s.is_primary:
             width = s.width
             height = s.height
             width_mm = s.width_mm
             height_mm = s.height_mm
-    print(f"Screen Size: {width}x{height}")
+            break
+    
+    # Fallback: if width_mm or height_mm is None (common on macOS)
+    # Estimate based on typical pixel density
+    # MacBook displays are typically ~110-220 PPI (pixels per inch)
+    # Assume 120 PPI (27.56mm per inch) as a reasonable default
+    if width_mm is None or height_mm is None:
+        # For MacBook 14" or 16", typical resolution is around 3024x1964 or similar
+        # Estimate physical size based on diagonal and aspect ratio
+        if width and height:
+            diagonal_pixels = (width**2 + height**2)**0.5
+            # Assume 14-16 inch display (typical MacBook)
+            # Use 15 inches (381mm) as default diagonal
+            assumed_diagonal_mm = 381  # 15 inches
+            pixel_size_mm = assumed_diagonal_mm / diagonal_pixels
+            width_mm = int(width * pixel_size_mm)
+            height_mm = int(height * pixel_size_mm)
+            print(f"Screen Size: {width}x{height} (estimated {width_mm}x{height_mm}mm)")
+        else:
+            # Ultimate fallback
+            width_mm = 344
+            height_mm = 193
+            print(f"Screen Size: {width}x{height} (using default size)")
+    else:
+        print(f"Screen Size: {width}x{height} ({width_mm}x{height_mm}mm)")
+    
     return width, height, width_mm, height_mm
 
 def ReadCameraCalibrationData(calibration_path, file_name = "calibration_data.txt"):

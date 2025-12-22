@@ -4,20 +4,21 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 import datetime
-from gaze_tracking.model import EyeModel
-import gaze_tracking.gui_opencv as gcv
+from src.gaze_tracking.model import EyeModel
+import src.gaze_tracking.gui_opencv as gcv
 
 # Use Agg backend for canvas
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import matplotlib.animation as animation
 
-from sfm.estimate_essential_matrix import estimateEssentialMatrix
-from sfm.decompose_essential_matrix import decomposeEssentialMatrix
-from sfm.disambiguate_relative_pose import disambiguateRelativePose
-from sfm.linear_triangulation import linearTriangulation
-from sfm.draw_camera import drawCamera
+# from sfm.estimate_essential_matrix import estimateEssentialMatrix
+from src.sfm.estimate_essential_matrix import estimateEssentialMatrix
+from src.sfm.decompose_essential_matrix import decomposeEssentialMatrix
+from src.sfm.disambiguate_relative_pose import disambiguateRelativePose
+from src.sfm.linear_triangulation import linearTriangulation
+from src.sfm.draw_camera import drawCamera
 # from sfm.utils import invHomMatrix, fit_plane, rotation_matrix_to_align_plane
-import utilities.utils as util
+import src.utilities.utils as util
 
 
 class SFM():

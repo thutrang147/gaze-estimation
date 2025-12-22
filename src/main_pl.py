@@ -1,4 +1,5 @@
 import pathlib
+import platform
 import cv2
 import numpy as np
 
@@ -16,7 +17,8 @@ def main():
     dir = "."
     homtrans = HomTransform(dir)
 
-    cap=cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    backend = cv2.CAP_AVFOUNDATION if platform.system() == "Darwin" else cv2.CAP_DSHOW
+    cap=cv2.VideoCapture(0, backend)
     # cap.set(cv2.CAP_PROP_SETTINGS, 1)
     cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)

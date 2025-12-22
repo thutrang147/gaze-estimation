@@ -11,9 +11,9 @@ import os
 import keyboard
 from omegaconf import DictConfig
 
-from plgaze.common import Face, FacePartsName, Visualizer
-from plgaze.gaze_estimator import GazeEstimator
-from plgaze.utils import get_3d_face_model
+from src.plgaze.common import Face, FacePartsName, Visualizer
+from src.plgaze.gaze_estimator import GazeEstimator
+from src.plgaze.utils import get_3d_face_model
 
 class GazeModel:
 

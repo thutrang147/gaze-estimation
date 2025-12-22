@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from scipy.spatial.transform import Rotation
 
-from plgaze.common import Camera, FaceParts, FacePartsName
+from src.plgaze.common import Camera, FaceParts, FacePartsName
 
 
 def _normalize_vector(vector: np.ndarray) -> np.ndarray:
@@ -64,4 +64,4 @@ class HeadPoseNormalizer:
             [1, 0, 0],
             [0, 1, 0],
             [0, 0, self.normalized_distance / distance],
-            ],dtype=np.float)
+            ],dtype=np.float64)

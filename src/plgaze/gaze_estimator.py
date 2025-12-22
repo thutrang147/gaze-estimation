@@ -5,11 +5,11 @@ import numpy as np
 import torch
 from omegaconf import DictConfig
 
-from plgaze.common import Camera, Face, FacePartsName
-from plgaze.head_pose_estimation import HeadPoseNormalizer, LandmarkEstimator
-from plgaze.models import create_model
-from plgaze.transforms import create_transform
-from plgaze.utils import get_3d_face_model
+from src.plgaze.common import Camera, Face, FacePartsName
+from src.plgaze.head_pose_estimation import HeadPoseNormalizer, LandmarkEstimator
+from src.plgaze.models import create_model
+from src.plgaze.transforms import create_transform
+from src.plgaze.utils import get_3d_face_model
 
 logger = logging.getLogger(__name__)
 

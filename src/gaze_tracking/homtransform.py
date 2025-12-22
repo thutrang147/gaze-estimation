@@ -7,10 +7,10 @@ import datetime
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import gaze_tracking.gui_opencv as gcv
-from utilities.kalman import Kalman
-from sfm.sfm_module import SFM
-import utilities.utils as util
+import src.gaze_tracking.gui_opencv as gcv
+from src.utilities.kalman import Kalman
+from src.sfm.sfm_module import SFM
+import src.utilities.utils as util
 
 
 class HomTransform:

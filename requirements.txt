@@ -1,7 +1,42 @@
-pandas
-matplotlib
-opencv-python
-scipy
-screeninfo
-keyboard
-scikit-image
+# Core dependencies for OpenVINO-based gaze estimation
+# NOTE: On macOS ARM (M1/M2/M3/M4), install OpenVINO from conda-forge:
+#   conda install -c conda-forge openvino
+# The pip wheels are corrupted for ARM. On Windows/Linux x86_64, use pip:
+openvino>=2023.0.0
+openvino-dev>=2023.0.0
+
+# Computer vision and image processing
+opencv-python>=4.8.0
+scikit-image>=0.21.0
+
+# Scientific computing
+numpy>=1.24.0,<2.0.0
+scipy>=1.10.0
+pandas>=2.0.0
+matplotlib>=3.7.0
+
+# PyTorch and related (for pl_gaze model)
+torch>=2.0.0,<2.3.0
+torchvision>=0.15.0,<0.18.0
+pytorch-lightning>=2.0.0,<2.2.0
+
+# Deep learning utilities for pl_gaze
+timm>=0.9.0
+pillow>=9.5.0
+h5py>=3.8.0
+
+# Configuration and logging
+omegaconf>=2.3.0
+coloredlogs>=15.0.1
+termcolor>=2.3.0
+
+# UI and system
+screeninfo>=0.8.0
+keyboard>=0.13.5
+
+# Web interface (for app.py)
+flask>=2.3.0
+
+# Optional but recommended
+pytorch-warmup-scheduler>=0.0.1
+wandb>=0.15.0

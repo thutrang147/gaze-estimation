@@ -3,50 +3,81 @@ Estimate gaze on computer screen
 
 ## Installation Guidelines
 
-- [ ] Set Up Python Virtual Environment
+### 1. Set Up Python Virtual Environment
 
-    Create a virtual Python environment to avoid dependency conflicts. To create a virtual environment (Python 3.8), use the following command or create a virtual environment with Anaconda navigator:
+Create a virtual Python environment (Python 3.8-3.11 recommended):
 
-        conda create --name <env_name> python=3.8
+```bash
+# Using conda (recommended)
+conda create --name gaze_estimation python=3.10
+conda activate gaze_estimation
 
-- [ ] Activate Virtual Environment
+# OR using venv
+python3 -m venv venv
+source venv/bin/activate  # On macOS/Linux
+# venv\Scripts\activate  # On Windows
+```
 
-    Activate the newly created Python virtual environment by issuing this command:    
+### 2. Install Dependencies
 
-        conda activate <env_name>
+All dependencies have been consolidated into a single requirements.txt file.
 
-- [ ] Set Up and Update PIP to the Highest Version
+#### macOS ARM (M1/M2/M3/M4) - Special Setup Required
 
-    Make sure pip is installed in your environment and upgrade it to the latest version by issuing the following command:
+OpenVINO pip wheels are corrupted on Apple Silicon. Use conda-forge instead:
 
-        python -m pip install --upgrade pip
+```bash
+# Install OpenVINO from conda-forge first
+conda install -c conda-forge openvino
 
-- [ ] Install the Package
+# Then install remaining dependencies
+pip install --upgrade pip
+pip install -r requirements.txt
+```
 
-    To install OpenVINO Development Tools into the existing environment with the deep learning framework of your choice, run the following command:
+#### Windows/Linux/Intel Mac
 
-        pip install openvino-dev==2023.3.0
-        pip install -r requirements.txt or conda install --file requirements.txt
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+```
 
-    Additionally to OpenVino we added the demo programm from pl_gaze_estimation (https://github.com/hysts/pytorch_mpiigaze_demo), training code for the pl_gaze_estimation using MPIIGaze, MPIIFaceGaze, and ETH-XGaze are available under: https://github.com/hysts/pl_gaze_estimation/tree/main
+**Note**: Installation may take several minutes as it downloads PyTorch, OpenVINO, and other large packages.
 
-    This model however, runs beter under Ubuntu, but it was tested under Windows as well. To use the pl_gaze_estimation model run:
+**For Windows users**: If you need H.264 video codec support, download `openh264-1.8.0-win64.dll` from [here](https://github.com/cisco/openh264/releases/tag/v1.8.0) and copy it to your environment's root folder (e.g., `C:\Anaconda3\envs\gaze_estimation`).
 
-        pip install -r requirements_pl_gaze.txt
+### 3. Grant Camera Permission (macOS only)
 
-- [ ] Copy the file openh264-1.8.0-win64.dll into the environment path (e.g. C:\Anaconda3\envs\name_of_env). Link: https://github.com/cisco/openh264/releases/tag/v1.8.0
+On macOS, the Terminal needs camera access. When you first run the application, you'll be prompted to grant permission:
+- Go to **System Settings** → **Privacy & Security** → **Camera**
+- Enable checkbox for **Terminal** (or **iTerm2** if you use that)
+- Restart your terminal after granting permission
 
-- [ ] run main.py to test the application with the OpenVino model
-    ```bash
-    python src/main.py
-    ```
+### 4. Run the Application
 
-- [ ] run main_pl.py to test the application with the pl_gaze_estimation model (https://github.com/hysts/pytorch_mpiigaze_demo)
-    ```python
-    python src/main_pl.py
-    ```
+**Option A: OpenVINO-based model (recommended for speed)**
+```bash
+python src/main.py
+```
 
-- [ ] in order to run main_compareWithTobii.py you need to generate a exe file that runs Tobii Eye Tracker 5, for this you need the sdk dll for Tobii Eye Tracker 5
+**Option B: PyTorch pl_gaze model**
+```bash
+python src/main_pl.py
+```
+
+This model is based on [pytorch_mpiigaze_demo](https://github.com/hysts/pytorch_mpiigaze_demo). Training code available at [pl_gaze_estimation](https://github.com/hysts/pl_gaze_estimation/tree/main).
+
+**Option C: Web interface (Flask app)**
+```bash
+python src/app.py
+```
+Then open http://localhost:5000 in your browser.
+
+**Option D: Compare with Tobii Eye Tracker**
+```bash
+python src/main_compareWithTobii.py
+```
+*Requires Tobii Eye Tracker 5 SDK and a custom executable file.*
 
 ## Credits
 If you use the code in the academic context, please cite:

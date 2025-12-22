@@ -34,7 +34,9 @@ def main(dir, type = "openvino"):
         homtrans = HomTransform(dir)
         # cap=cv2.VideoCapture(0)
         """ for higher resolution (max available: 1920x1080) """
-        cap=cv2.VideoCapture(0, cv2.CAP_DSHOW)
+        import platform
+        backend = cv2.CAP_AVFOUNDATION if platform.system() == "Darwin" else cv2.CAP_DSHOW
+        cap=cv2.VideoCapture(0, backend)
         cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 960)

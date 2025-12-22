@@ -1,6 +1,6 @@
 import numpy as np
 
-from sfm.linear_triangulation import linearTriangulation
+from src.sfm.linear_triangulation import linearTriangulation
 
 def disambiguateRelativePose(Rots,u3,points0_h,points1_h,K1,K2):
     """ DISAMBIGUATERELATIVEPOSE- finds the correct relative camera pose (among

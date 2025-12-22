@@ -7,7 +7,7 @@ import mediapipe
 import numpy as np
 from omegaconf import DictConfig
 
-from plgaze.common import Face
+from src.plgaze.common import Face
 
 
 class LandmarkEstimator:
