@@ -30,11 +30,11 @@ class Targets():
     def getTargetCalibration(self, time_interval=2):
         """
         This function is used to get the target positions for calibration.
-        By uncommenting the code, you can get more target positions.
+        Using 9 points for better accuracy: 4 corners + 4 edges + 1 center
         """
         tstop = time.time()
         tdelta = tstop-self.tstart
-        idx = 4
+        idx = 9
         if tdelta < time_interval:
             idx = 0
             Setpos = [int(self.width/10), int(self.height/10)]
@@ -47,33 +47,34 @@ class Targets():
         elif tdelta > 3*time_interval and tdelta < 4*time_interval:
             idx = 3
             Setpos = [int(self.width*9/10), int(self.height*9/10)]
-        # elif tdelta > 4*time_interval and tdelta < 5*time_interval:
-        #     idx = 4
-        #     Setpos = [int(self.width/2), int(self.height/2)]
-        # elif tdelta > 5*time_interval and tdelta < 6*time_interval:
-        #     idx = 5
-        #     Setpos = [int(self.width/2), int(self.height/8)]
-        # elif tdelta > 6*time_interval and tdelta < 7*time_interval:
-        #     idx = 6
-        #     Setpos = [int(self.width/2), int(self.height*9/10)]
-        # elif tdelta > 7*time_interval and tdelta < 8*time_interval:
-        #     idx = 7
-        #     Setpos = [int(self.width/10), int(self.height/2)]
-        # elif tdelta > 8*time_interval and tdelta < 9*time_interval:
-        #     idx = 8
-        #     Setpos = [int(self.width*9/10), int(self.height/2)]
-        # elif tdelta > 9*time_interval and tdelta < 10.5*time_interval:
+        elif tdelta > 4*time_interval and tdelta < 5*time_interval:
+            idx = 4
+            Setpos = [int(self.width/2), int(self.height/2)]
+        elif tdelta > 5*time_interval and tdelta < 6*time_interval:
+            idx = 5
+            Setpos = [int(self.width/2), int(self.height/10)]
+        elif tdelta > 6*time_interval and tdelta < 7*time_interval:
+            idx = 6
+            Setpos = [int(self.width/2), int(self.height*9/10)]
+        elif tdelta > 7*time_interval and tdelta < 8*time_interval:
+            idx = 7
+            Setpos = [int(self.width/10), int(self.height/2)]
+        elif tdelta > 8*time_interval and tdelta < 9*time_interval:
+            idx = 8
+            Setpos = [int(self.width*9/10), int(self.height/2)]
+        # # Additional points for even better accuracy (optional)
+        # elif tdelta > 9*time_interval and tdelta < 10*time_interval:
         #     idx = 9
-        #     Setpos = [int(self.width/2), int(self.height/2)]
-        # elif tdelta > 10.5*time_interval and tdelta < 12*time_interval:
+        #     Setpos = [int(self.width/4), int(self.height/4)]
+        # elif tdelta > 10*time_interval and tdelta < 11*time_interval:
         #     idx = 10
-        #     Setpos = [int(self.width/2), int(self.height/2)]
-        # elif tdelta > 12*time_interval and tdelta < 13.5*time_interval:
+        #     Setpos = [int(self.width*3/4), int(self.height/4)]
+        # elif tdelta > 11*time_interval and tdelta < 12*time_interval:
         #     idx = 11
-        #     Setpos = [int(self.width/2), int(self.height/2)]
-        # elif tdelta > 13.5*time_interval and tdelta < 15*time_interval:
+        #     Setpos = [int(self.width/4), int(self.height*3/4)]
+        # elif tdelta > 12*time_interval and tdelta < 13*time_interval:
         #     idx = 12
-        #     Setpos = [int(self.width/2), int(self.height/2)]
+        #     Setpos = [int(self.width*3/4), int(self.height*3/4)]
 
         else:
             print(f"Calibration Done.")

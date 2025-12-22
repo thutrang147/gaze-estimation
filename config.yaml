@@ -1,0 +1,66 @@
+# Gaze Estimation Configuration
+# Adjust these parameters to improve accuracy
+
+calibration:
+  # Number of calibration points (more points = better accuracy but longer calibration)
+  num_points: 9  # Options: 4, 9, 13
+  
+  # Time to stay at each calibration point (seconds)
+  time_per_point: 2
+  
+  # Use structure-from-motion for head movement compensation
+  use_sfm: true
+
+tracking:
+  # Smoothing filter strength (0-1, higher = smoother but slower response)
+  smoothing: 0.7
+  
+  # Kalman filter noise parameters
+  process_noise: 0.1
+  measurement_noise: 0.5
+  
+  # Median filter window size for gaze smoothing
+  median_filter_size: 5
+
+camera:
+  # Camera resolution (higher = more accurate but slower)
+  width: 1280
+  height: 960
+  
+  # Camera backend
+  # macOS: CAP_AVFOUNDATION
+  # Windows: CAP_DSHOW
+  # Linux: CAP_V4L2
+  backend: auto
+
+screen:
+  # Physical screen size estimation method
+  # auto: estimate from resolution
+  # manual: specify below
+  size_method: auto
+  
+  # Manual screen size (mm) - only used if size_method = manual
+  width_mm: 344
+  height_mm: 193
+
+model:
+  # Model precision (FP32 = most accurate, FP16 = faster)
+  precision: FP32
+  
+  # Device (CPU or GPU if available)
+  device: CPU
+
+improvements:
+  # Personal calibration profile
+  save_calibration: true
+  calibration_file: "results/user_calibration.npz"
+  
+  # Recalibration recommendation (minutes)
+  recalibrate_after: 30
+  
+  # Eye detection confidence threshold (0-1)
+  min_eye_confidence: 0.5
+  
+  # Head pose filtering
+  filter_head_pose: true
+  max_head_rotation: 30  # degrees
