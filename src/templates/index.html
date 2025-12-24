@@ -532,16 +532,8 @@
             overlay.style.display = 'block';
 
             try {
-                // Bắt đầu calibration - gửi kích thước window lên backend
-                const windowSize = {
-                    width: window.innerWidth,
-                    height: window.innerHeight
-                };
-                const startResp = await fetch('/calibration/start', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(windowSize)
-                });
+                // Bắt đầu calibration
+                const startResp = await fetch('/calibration/start', { method: 'POST' });
                 const startData = await startResp.json();
                 
                 if (startData.status !== 'success') {
