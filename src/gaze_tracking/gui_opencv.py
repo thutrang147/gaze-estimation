@@ -63,18 +63,18 @@ class Targets():
             idx = 8
             Setpos = [int(self.width*9/10), int(self.height/2)]
         # # Additional points for even better accuracy (optional)
-        # elif tdelta > 9*time_interval and tdelta < 10*time_interval:
-        #     idx = 9
-        #     Setpos = [int(self.width/4), int(self.height/4)]
-        # elif tdelta > 10*time_interval and tdelta < 11*time_interval:
-        #     idx = 10
-        #     Setpos = [int(self.width*3/4), int(self.height/4)]
-        # elif tdelta > 11*time_interval and tdelta < 12*time_interval:
-        #     idx = 11
-        #     Setpos = [int(self.width/4), int(self.height*3/4)]
-        # elif tdelta > 12*time_interval and tdelta < 13*time_interval:
-        #     idx = 12
-        #     Setpos = [int(self.width*3/4), int(self.height*3/4)]
+        elif tdelta > 9*time_interval and tdelta < 10*time_interval:
+            idx = 9
+            Setpos = [int(self.width/4), int(self.height/4)]
+        elif tdelta > 10*time_interval and tdelta < 11*time_interval:
+            idx = 10
+            Setpos = [int(self.width*3/4), int(self.height/4)]
+        elif tdelta > 11*time_interval and tdelta < 12*time_interval:
+            idx = 11
+            Setpos = [int(self.width/4), int(self.height*3/4)]
+        elif tdelta > 12*time_interval and tdelta < 13*time_interval:
+            idx = 12
+            Setpos = [int(self.width*3/4), int(self.height*3/4)]
 
         else:
             print(f"Calibration Done.")
@@ -182,7 +182,7 @@ class Targets():
 
         cv2.drawMarker(frame, tuple(self.SetPos), color=(255,0,0), markerType=cv2.MARKER_CROSS, thickness=4) 
 
-        # cv2.circle(frame, (int(gaze[0]), int(gaze[1])), 15, (0,0,255), -1)   # -1 to fill the circle
+        cv2.circle(frame, (int(gaze[0]), int(gaze[1])), 15, (0,0,255), -1)   # -1 to fill the circle
 
         cv2.namedWindow("Gaze", cv2.WINDOW_NORMAL)
         cv2.setWindowProperty("Gaze", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
@@ -244,7 +244,7 @@ class Targets():
         self.SetPos[1] = int(self.SetPos[1]+step_y)
         cv2.drawMarker(frame, tuple(self.SetPos), color=(255,0,0), markerType=cv2.MARKER_CROSS, thickness=4) 
 
-        # cv2.circle(frame, (int(gaze[0]), int(gaze[1])), 15, (0,0,255), -1)   # -1 to fill the circle
+        cv2.circle(frame, (int(gaze[0]), int(gaze[1])), 15, (0,0,255), -1)   # -1 to fill the circle
 
         cv2.namedWindow("Gaze", cv2.WINDOW_NORMAL)
         cv2.setWindowProperty("Gaze", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
@@ -309,7 +309,7 @@ def getWhiteFrame(height, width):
 def get_out_video(cap, output_path, file_name = "calibrate.mp4", scalewidth = 1):
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)) # get frame width in pixel
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))    # get frame height in pixel
-    # fps = int(cap.get(cv2.CAP_PROP_FPS))
+    fps = int(cap.get(cv2.CAP_PROP_FPS))
     fps = 20
     out_video = cv2.VideoWriter( os.path.join(output_path,file_name), cv2.VideoWriter_fourcc(*'avc1'), fps, (scalewidth*width, height))
     return out_video, width, height
