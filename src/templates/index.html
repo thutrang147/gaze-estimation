@@ -300,103 +300,93 @@
             margin: 3px 0;
         }
 
-        /* Calibration Overlay */
-        .calibration-overlay {
+        /* Calibration Screen */
+        .calibration-screen {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.95);
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             z-index: 10000;
             display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .calibration-screen.active {
+            display: flex;
         }
 
         .calibration-point {
             position: absolute;
-            width: 30px;
-            height: 30px;
-            background: radial-gradient(circle, #ff4081 0%, #ff4081 40%, transparent 70%);
+            width: 20px;
+            height: 20px;
+            background: #ff3366;
+            border: 3px solid white;
             border-radius: 50%;
-            transform: translate(-50%, -50%);
-            animation: pulse-calibration 1.5s infinite;
-            box-shadow: 0 0 30px rgba(255, 64, 129, 0.8);
+            box-shadow: 0 0 20px rgba(255, 51, 102, 0.6),
+                        0 0 40px rgba(255, 51, 102, 0.4);
+            animation: pulse-point 1s infinite;
+            cursor: crosshair;
+            z-index: 10002;
         }
 
-        .calibration-point::before {
-            content: '';
+        @keyframes pulse-point {
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.3);
+            }
+        }
+
+        .calibration-info {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 8px;
-            height: 8px;
-            background: white;
-            border-radius: 50%;
-        }
-
-        .calibration-point::after {
-            content: attr(data-number);
-            position: absolute;
+            text-align: center;
             color: white;
-            font-size: 28px;
+            font-size: 2em;
             font-weight: bold;
-            text-shadow: 0 0 10px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.7);
-            z-index: 10002;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            pointer-events: none;
+            z-index: 10001;
         }
 
-        @keyframes pulse-calibration {
-            0%, 100% {
-                transform: translate(-50%, -50%) scale(1);
-                opacity: 1;
-            }
-            50% {
-                transform: translate(-50%, -50%) scale(1.3);
-                opacity: 0.7;
-            }
+        .calibration-counter {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px 25px;
+            border-radius: 10px;
+            color: white;
+            font-size: 1.2em;
+            font-weight: bold;
+            backdrop-filter: blur(10px);
+            z-index: 10001;
         }
 
         .calibration-instruction {
             position: absolute;
-            top: 50px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.95);
-            padding: 20px 40px;
-            border-radius: 15px;
-            font-size: 1.2em;
-            font-weight: 600;
-            color: #333;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            text-align: center;
-        }
-
-        .calibration-progress {
-            position: absolute;
             bottom: 50px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.95);
-            padding: 15px 30px;
-            border-radius: 10px;
-            font-size: 1em;
-            font-weight: 600;
-            color: #667eea;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px 40px;
+            border-radius: 15px;
+            color: white;
+            font-size: 1.1em;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            max-width: 600px;
+            z-index: 10001;
         }
     </style>
 </head>
 <body>
-    <!-- Calibration Overlay -->
-    <div id="calibrationOverlay" class="calibration-overlay">
-        <div class="calibration-instruction" id="calibrationInstruction">
-            Nhìn vào điểm đỏ và giữ nguyên trong 2 giây
-        </div>
-        <div class="calibration-point" id="calibrationPoint"></div>
-        <div class="calibration-progress" id="calibrationProgress">
-            Điểm 0 / 9
-        </div>
-    </div>
-
     <!-- Header -->
     <div class="header">
         <h1>Gaze Estimation System</h1>
@@ -420,6 +410,20 @@
     <div class="main-content">
         <!-- Gaze Cursor - Di chuyển ra ngoài để đè lên toàn bộ -->
         <div id="gazeCursor" class="gaze-cursor" style="display: none;"></div>
+
+        <!-- Calibration Screen -->
+        <div id="calibrationScreen" class="calibration-screen">
+            <div class="calibration-counter">
+                <span id="calibrationProgress">0 / 9</span>
+            </div>
+            <div class="calibration-info" id="calibrationInfo">
+                Chuẩn bị hiệu chỉnh...
+            </div>
+            <div id="calibrationPoint" class="calibration-point" style="display: none;"></div>
+            <div class="calibration-instruction">
+                Nhìn vào điểm đỏ khi nó xuất hiện và giữ nguyên trong vài giây
+            </div>
+        </div>
 
         <!-- Tracking Area -->
         <div class="tracking-area" id="trackingArea">
@@ -481,10 +485,35 @@
         const trackingArea = document.getElementById('trackingArea');
         let isCalibrating = false;
 
+        // Gửi viewport size lên server
+        function sendViewportSize() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            
+            fetch('/set_viewport', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ width: width, height: height })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Viewport size sent:', width, height);
+            })
+            .catch(error => {
+                console.error('Failed to send viewport size:', error);
+            });
+        }
+
         // Kiểm tra trạng thái khi load
         window.addEventListener('load', () => {
+            sendViewportSize();  // Gửi viewport size ngay khi load
             checkStatus();
             statusCheckInterval = setInterval(checkStatus, 1000);
+        });
+        
+        // Cập nhật viewport size khi resize
+        window.addEventListener('resize', () => {
+            sendViewportSize();
         });
 
         function startGaze() {
@@ -503,13 +532,10 @@
                 if (data.status === 'success') {
                     showAlert('success', data.message);
                     stopBtn.disabled = false;
-                    
-                    // Bắt đầu calibration sau 1 giây
+                    // Bắt đầu calibration ngay sau khi khởi động
                     setTimeout(() => {
-                        if (confirm('Bắt đầu hiệu chỉnh? Bạn sẽ cần nhìn vào 9 điểm trên màn hình.')) {
-                            startCalibration();
-                        }
-                    }, 1000);
+                        startCalibration();
+                    }, 2000);
                 } else {
                     showAlert('error', data.message);
                     startBtn.disabled = false;
@@ -522,108 +548,116 @@
         }
 
         async function startCalibration() {
+            console.log('Starting calibration...');
             isCalibrating = true;
-            const overlay = document.getElementById('calibrationOverlay');
-            const point = document.getElementById('calibrationPoint');
-            const instruction = document.getElementById('calibrationInstruction');
-            const progress = document.getElementById('calibrationProgress');
+            
+            const calibScreen = document.getElementById('calibrationScreen');
+            const calibInfo = document.getElementById('calibrationInfo');
+            const calibPoint = document.getElementById('calibrationPoint');
+            const calibProgress = document.getElementById('calibrationProgress');
 
-            // Hiển thị overlay
-            overlay.style.display = 'block';
-
+            // Hiển thị màn hình calibration
+            calibScreen.classList.add('active');
+            calibInfo.textContent = 'Đang khởi động calibration...';
+            
+            // Gửi viewport size trước khi bắt đầu
+            sendViewportSize();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
             try {
-                // Bắt đầu calibration
-                const startResp = await fetch('/calibration/start', { method: 'POST' });
-                const startData = await startResp.json();
+                // Gọi API để bắt đầu calibration
+                const startResponse = await fetch('/calibration/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
                 
+                const startData = await startResponse.json();
                 if (startData.status !== 'success') {
                     throw new Error(startData.message);
                 }
 
-                const totalPoints = startData.total_points;
+                console.log('Calibration started, total points:', startData.total_points);
+                calibInfo.textContent = 'Sẵn sàng! Nhìn vào điểm đỏ...';
                 
-                console.log(`🎯 BẮT ĐẦU CALIBRATION với ${totalPoints} điểm`);
-                console.log(`📺 Kích thước màn hình: ${window.innerWidth}x${window.innerHeight}`);
-                
-                // Hiển thị hướng dẫn trên overlay thay vì alert
-                instruction.textContent = `Sẽ có ${totalPoints} điểm đỏ có số thứ tự. Nhìn vào mỗi điểm!`;
-                await sleep(3000);
-                
-                // Lặp qua từng điểm - đảm bảo chạy đủ totalPoints lần
-                let pointsCollected = 0;
-                
-                while (pointsCollected < totalPoints) {
-                    // Lấy vị trí điểm hiện tại
-                    const pointResp = await fetch('/calibration/current_point');
-                    const pointData = await pointResp.json();
-                    
-                    console.log(`📍 Point ${pointsCollected + 1}/${totalPoints}:`, pointData);
-                    
-                    // Nếu backend báo done sớm (lỗi), log warning nhưng tiếp tục
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                // Lặp qua từng điểm calibration
+                let pointIndex = 0;
+                while (pointIndex < 9) {  // 9 điểm calibration
+                    // Lấy điểm hiện tại
+                    const pointResponse = await fetch('/calibration/current_point');
+                    const pointData = await pointResponse.json();
+
                     if (pointData.done) {
-                        console.error(`⚠️ Backend báo done sau ${pointsCollected} điểm! Cần ${totalPoints} điểm!`);
-                        alert(`Lỗi: Backend chỉ có ${pointsCollected} điểm thay vì ${totalPoints}. Vui lòng reload trang!`);
+                        console.log('Calibration completed!');
+                        break;
+                    }
+
+                    console.log(`Showing point ${pointData.index + 1}/${pointData.total} at (${pointData.x}, ${pointData.y})`);
+
+                    // Cập nhật progress
+                    calibProgress.textContent = `${pointData.index + 1} / ${pointData.total}`;
+                    
+                    // Hiển thị điểm
+                    calibPoint.style.left = pointData.x + 'px';
+                    calibPoint.style.top = pointData.y + 'px';
+                    calibPoint.style.display = 'block';
+                    calibInfo.textContent = `Điểm ${pointData.index + 1}/${pointData.total}`;
+
+                    // Đợi 3 giây để người dùng nhìn vào điểm
+                    await new Promise(resolve => setTimeout(resolve, 3000));
+
+                    // Thu thập dữ liệu
+                    calibInfo.textContent = 'Đang thu thập dữ liệu...';
+                    const collectResponse = await fetch('/calibration/collect', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+
+                    const collectData = await collectResponse.json();
+                    if (collectData.status !== 'success') {
+                        console.error('Failed to collect data:', collectData.message);
+                        calibInfo.textContent = 'Lỗi! Thử lại...';
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        continue;  // Thử lại điểm này
+                    }
+
+                    console.log(`Collected data for point ${pointData.index + 1}, total: ${collectData.collected}/${collectData.total}`);
+                    
+                    // Ẩn điểm
+                    calibPoint.style.display = 'none';
+                    
+                    // Kiểm tra xem đã hoàn thành chưa
+                    if (collectData.done || collectData.collected >= collectData.total) {
+                        console.log('All calibration points collected!');
                         break;
                     }
                     
-                    // Hiển thị điểm với số thứ tự
-                    point.style.left = pointData.x + 'px';
-                    point.style.top = pointData.y + 'px';
-                    point.setAttribute('data-number', pointsCollected + 1);
-                    progress.textContent = `Điểm ${pointsCollected + 1} / ${totalPoints}`;
-                    instruction.textContent = `Nhìn vào điểm số ${pointsCollected + 1} và giữ nguyên...`;
-                    
-                    console.log(`🔴 HIỂN THỊ ĐIỂM ${pointsCollected + 1}/9 tại (${pointData.x}, ${pointData.y})`);
-                    console.log(`   Màn hình: ${window.innerWidth}x${window.innerHeight}`);
-                    console.log(`   Điểm có nằm trong màn hình? ${pointData.x >= 0 && pointData.x <= window.innerWidth && pointData.y >= 0 && pointData.y <= window.innerHeight}`);
-                    
-                    // Đợi 3 giây để user nhìn vào điểm (tăng từ 2s lên 3s)
-                    await sleep(3000);
-                    
-                    // Thu thập dữ liệu
-                    instruction.textContent = 'Đang thu thập dữ liệu...';
-                    const collectResp = await fetch('/calibration/collect', { method: 'POST' });
-                    const collectData = await collectResp.json();
-                    
-                    console.log(`Collect result for point ${pointsCollected}:`, collectData);
-                    
-                    if (collectData.status !== 'success') {
-                        alert('Lỗi: ' + collectData.message + '. Thử lại!');
-                        // Không tăng counter, thử lại điểm này
-                        continue;
-                    }
-                    
-                    // Hiệu ứng thành công
-                    point.style.background = 'radial-gradient(circle, #4caf50 0%, #4caf50 40%, transparent 70%)';
-                    await sleep(300);
-                    point.style.background = 'radial-gradient(circle, #ff4081 0%, #ff4081 40%, transparent 70%)';
-                    
-                    // Tăng số điểm đã thu thập
-                    pointsCollected++;
-                    console.log(`Successfully collected point ${pointsCollected}/${totalPoints}`);
+                    // Chờ một chút trước khi chuyển sang điểm tiếp theo
+                    await new Promise(resolve => setTimeout(resolve, 500));
+
+                    pointIndex++;
                 }
-                
-                // Hoàn thành
-                instruction.textContent = 'Hiệu chỉnh hoàn tất!';
-                progress.textContent = 'Đang tính toán...';
-                await sleep(2000);
-                
-                overlay.style.display = 'none';
+
+                // Calibration hoàn tất
+                calibInfo.textContent = '✓ Hoàn tất hiệu chỉnh!';
+                calibPoint.style.display = 'none';
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                // Ẩn màn hình calibration và bắt đầu tracking
+                calibScreen.classList.remove('active');
                 isCalibrating = false;
-                
-                // Bắt đầu tracking
                 startGazeTracking();
-                showAlert('success', 'Hiệu chỉnh thành công! Bắt đầu theo dõi.');
-                
+                showAlert('success', 'Calibration hoàn tất! Bắt đầu tracking...');
+
             } catch (error) {
-                overlay.style.display = 'none';
+                console.error('Calibration error:', error);
+                calibInfo.textContent = 'Lỗi: ' + error.message;
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                calibScreen.classList.remove('active');
                 isCalibrating = false;
                 showAlert('error', 'Lỗi calibration: ' + error.message);
             }
-        }
-
-        function sleep(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
         }
 
         function stopGaze() {
@@ -696,8 +730,8 @@
                     if (data.valid) {
                         updateGazeCursor(data.x, data.y);
 
-                        document.getElementById('gazeX').textContent = Math.round(data.x);
-                        document.getElementById('gazeY').textContent = Math.round(data.y);
+                        document.getElementById('gazeX').textContent = data.x;
+                        document.getElementById('gazeY').textContent = data.y;
                         document.getElementById('gazeValid').textContent = 'Điểm nhìn: Đang theo dõi ✓';
                     } else {
                         document.getElementById('gazeValid').textContent = 'Điểm nhìn: Chưa xác định';

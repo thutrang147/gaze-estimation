@@ -28,6 +28,8 @@ current_calibration_index = 0
 calibration_gaze_data = []  # Collected gaze data at each point
 model_instance = None
 homtrans_instance = None
+viewport_width = None
+viewport_height = None
 
 # Thêm đường dẫn để tìm modules
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -50,24 +52,33 @@ class WebHomTransform(HomTransform):
         global calibration_points, current_calibration_index, calibration_gaze_data
 
         try:
-            is_calibrating = True
+            # Đặt trạng thái ban đầu (nhưng endpoint /calibration/start sẽ set is_calibrating = True)
             calibration_status = "Sẵn sàng - Đợi người dùng bắt đầu calibration trên web"
             
             print(f"Web calibration: Đợi người dùng nhấn 'Bắt đầu hiệu chỉnh'... Cần thu thập {len(calibration_points)} điểm")
             
-            # Đợi cho đến khi calibration hoàn tất (được set từ endpoint)
-            # Mỗi điểm: 3s hiển thị + 0.5s collect = 3.5s
-            # 9 điểm × 3.5s = 31.5s + buffer → 60s timeout
-            max_wait = 600  # 60 giây timeout (600 * 0.1s = 60s)
+            # Đợi cho đến khi is_calibrating được set thành True (từ /calibration/start)
+            max_wait_start = 1200  # 120 giây để người dùng nhấn nút start
+            waited = 0
+            while not is_calibrating and waited < max_wait_start:
+                time.sleep(0.1)
+                waited += 1
+                if waited % 100 == 0:
+                    print(f"Waiting for user to start calibration... ({waited//10}s)")
+            
+            if not is_calibrating:
+                raise Exception("Timeout: Người dùng không bắt đầu calibration")
+            
+            print("User started calibration, now waiting for data collection...")
+            
+            # Đợi cho đến khi calibration hoàn tất (đủ dữ liệu được thu thập)
+            max_wait = 1200  # 120 giây timeout cho việc thu thập dữ liệu
             waited = 0
             while is_calibrating and len(calibration_gaze_data) < len(calibration_points) and waited < max_wait:
                 time.sleep(0.1)
                 waited += 1
                 if waited % 50 == 0:  # Print every 5 seconds
                     print(f"Calibration progress: {len(calibration_gaze_data)}/{len(calibration_points)}")
-            
-            if not is_calibrating:
-                raise Exception("Calibration bị hủy")
             
             if len(calibration_gaze_data) < len(calibration_points):
                 raise Exception(f"Không đủ dữ liệu calibration: chỉ có {len(calibration_gaze_data)}/{len(calibration_points)}")
@@ -107,74 +118,41 @@ class WebHomTransform(HomTransform):
             print(f"Gaze vectors shape: {gaze_vectors.shape}")
             print(f"Screen coords shape: {screen_coords.shape}")
             
-            # Loại bỏ outliers bằng cách kiểm tra distance từ median
-            if len(gaze_vectors) > 4:
-                # Tính median của gaze vectors
-                median_gaze = np.median(gaze_vectors[:, :2], axis=0)
-                distances = np.linalg.norm(gaze_vectors[:, :2] - median_gaze, axis=1)
-                median_dist = np.median(distances)
-                
-                # Loại bỏ điểm có distance > 3 * median (outliers)
-                threshold = 3 * median_dist + 0.1  # +0.1 để tránh threshold = 0
-                inliers = distances < threshold
-                
-                outliers_count = np.sum(~inliers)
-                if outliers_count > 0:
-                    print(f"⚠️ Loại bỏ {outliers_count} outliers khỏi {len(gaze_vectors)} điểm")
-                    gaze_vectors = gaze_vectors[inliers]
-                    screen_coords = screen_coords[inliers]
-            
             # Tạo transformation matrix 4x4
             STransG = np.eye(4)
             
-            if len(gaze_vectors) >= 3:
-                # Dùng full affine transformation (6 parameters): 
-                # screen_x = a*gaze_x + b*gaze_y + c
-                # screen_y = d*gaze_x + e*gaze_y + f
-                
+            if len(gaze_vectors) >= 4:
+                # Tính scale và offset sử dụng least squares
                 gaze_x = gaze_vectors[:, 0]
                 gaze_y = gaze_vectors[:, 1]
                 screen_x = screen_coords[:, 0]
                 screen_y = screen_coords[:, 1]
                 
-                # Tạo matrix A cho least squares: [gaze_x, gaze_y, 1]
-                A = np.column_stack([gaze_x, gaze_y, np.ones(len(gaze_x))])
+                # Linear regression: screen_x = a*gaze_x + b
+                gaze_x_mean = gaze_x.mean()
+                gaze_y_mean = gaze_y.mean()
+                screen_x_mean = screen_x.mean()
+                screen_y_mean = screen_y.mean()
                 
-                # Giải hệ phương trình: A @ params_x = screen_x
-                try:
-                    params_x = np.linalg.lstsq(A, screen_x, rcond=None)[0]
-                    params_y = np.linalg.lstsq(A, screen_y, rcond=None)[0]
-                    
-                    # Fill transformation matrix với affine parameters
-                    STransG[0, 0] = params_x[0]  # a (scale x theo gaze_x)
-                    STransG[0, 1] = params_x[1]  # b (skew/rotation)
-                    STransG[0, 3] = params_x[2]  # c (offset x)
-                    STransG[1, 0] = params_y[0]  # d (skew/rotation)
-                    STransG[1, 1] = params_y[1]  # e (scale y theo gaze_y)
-                    STransG[1, 3] = params_y[2]  # f (offset y)
-                    
-                    # Tính error để đánh giá quality
-                    pred_x = A @ params_x
-                    pred_y = A @ params_y
-                    error_x = np.mean(np.abs(pred_x - screen_x))
-                    error_y = np.mean(np.abs(pred_y - screen_y))
-                    
-                    print(f"✅ Affine transformation computed:")
-                    print(f"   X: a={params_x[0]:.2f}, b={params_x[1]:.2f}, c={params_x[2]:.2f} (error: {error_x:.1f}px)")
-                    print(f"   Y: d={params_y[0]:.2f}, e={params_y[1]:.2f}, f={params_y[2]:.2f} (error: {error_y:.1f}px)")
-                    
-                except np.linalg.LinAlgError:
-                    print("⚠️ Least squares failed, dùng simple scaling")
-                    # Fallback: simple scaling
-                    scale_x = (screen_x.max() - screen_x.min()) / (gaze_x.max() - gaze_x.min() + 1e-6)
-                    scale_y = (screen_y.max() - screen_y.min()) / (gaze_y.max() - gaze_y.min() + 1e-6)
-                    offset_x = screen_x.mean() - scale_x * gaze_x.mean()
-                    offset_y = screen_y.mean() - scale_y * gaze_y.mean()
-                    
-                    STransG[0, 0] = scale_x
-                    STransG[1, 1] = scale_y
-                    STransG[0, 3] = offset_x
-                    STransG[1, 3] = offset_y
+                # Slope for x
+                numerator_x = ((gaze_x - gaze_x_mean) * (screen_x - screen_x_mean)).sum()
+                denominator_x = ((gaze_x - gaze_x_mean) ** 2).sum()
+                scale_x = numerator_x / (denominator_x + 1e-6)
+                offset_x = screen_x_mean - scale_x * gaze_x_mean
+                
+                # Slope for y
+                numerator_y = ((gaze_y - gaze_y_mean) * (screen_y - screen_y_mean)).sum()
+                denominator_y = ((gaze_y - gaze_y_mean) ** 2).sum()
+                scale_y = numerator_y / (denominator_y + 1e-6)
+                offset_y = screen_y_mean - scale_y * gaze_y_mean
+                
+                # Fill transformation matrix
+                STransG[0, 0] = scale_x
+                STransG[1, 1] = scale_y
+                STransG[0, 3] = offset_x
+                STransG[1, 3] = offset_y
+                
+                print(f"Transformation computed: scale_x={scale_x:.2f}, scale_y={scale_y:.2f}, offset_x={offset_x:.2f}, offset_y={offset_y:.2f}")
             else:
                 print("WARNING: Không đủ dữ liệu để tính transformation, sử dụng identity matrix")
             
@@ -367,9 +345,17 @@ def run_gaze_estimation(dir):
         if camera_cap is None or not camera_cap.isOpened():
             raise Exception("Camera chưa được khởi tạo hoặc không khả dụng")
 
-        # Setup calibration points (9 điểm)
-        screen_width = homtrans.width
-        screen_height = homtrans.height
+        # Setup calibration points (9 điểm) - phải là global để các endpoint khác truy cập được
+        # Sử dụng viewport size nếu có, fallback về screen size
+        if viewport_width and viewport_height:
+            screen_width = viewport_width
+            screen_height = viewport_height
+            print(f"Using viewport size: {screen_width}x{screen_height}")
+        else:
+            screen_width = homtrans.width
+            screen_height = homtrans.height
+            print(f"Using screen size: {screen_width}x{screen_height}")
+        
         margin_x = screen_width // 6
         margin_y = screen_height // 6
         
@@ -386,6 +372,8 @@ def run_gaze_estimation(dir):
         ]
         
         print(f"Calibration points setup: {len(calibration_points)} points")
+        for i, pt in enumerate(calibration_points):
+            print(f"  Point {i}: {pt}")
         print("Camera OK, bắt đầu web calibration...")
         calibration_status = "Sẵn sàng - Nhấn 'Bắt đầu hiệu chỉnh' trên trang web"
 
@@ -479,6 +467,23 @@ def get_status():
     })
 
 
+@app.route('/set_viewport', methods=['POST'])
+def set_viewport():
+    """Nhận viewport size từ browser"""
+    global viewport_width, viewport_height
+    
+    data = request.get_json()
+    viewport_width = data.get('width')
+    viewport_height = data.get('height')
+    
+    print(f"Received viewport size: {viewport_width}x{viewport_height}")
+    
+    return jsonify({
+        'status': 'success',
+        'message': f'Viewport size updated: {viewport_width}x{viewport_height}'
+    })
+
+
 @app.route('/gaze_point', methods=['GET'])
 def get_gaze_point():
     global current_gaze_point
@@ -504,33 +509,17 @@ def start_calibration():
             'message': 'Vui lòng khởi động hệ thống trước'
         }), 400
     
-    # Nhận window size từ frontend
-    data = request.get_json()
-    if data and 'width' in data and 'height' in data:
-        screen_width = data['width']
-        screen_height = data['height']
-        
-        # Recalculate calibration points dựa trên actual window size
-        margin_x = screen_width // 6
-        margin_y = screen_height // 6
-        
-        calibration_points = [
-            (margin_x, margin_y),                      # Top left
-            (screen_width // 2, margin_y),             # Top center
-            (screen_width - margin_x, margin_y),       # Top right
-            (margin_x, screen_height // 2),            # Middle left
-            (screen_width // 2, screen_height // 2),   # Center
-            (screen_width - margin_x, screen_height // 2),  # Middle right
-            (margin_x, screen_height - margin_y),      # Bottom left
-            (screen_width // 2, screen_height - margin_y),  # Bottom center
-            (screen_width - margin_x, screen_height - margin_y)  # Bottom right
-        ]
-        
-        print(f"Calibration points recalculated for window size {screen_width}x{screen_height}")
-        print(f"Points: {calibration_points}")
+    if len(calibration_points) == 0:
+        return jsonify({
+            'status': 'error',
+            'message': 'Calibration points chưa được khởi tạo'
+        }), 400
     
     current_calibration_index = 0
     calibration_gaze_data = []
+    is_calibrating = True  # Set is_calibrating = True
+    
+    print(f"[start_calibration] Starting with {len(calibration_points)} points")
     
     return jsonify({
         'status': 'success',
